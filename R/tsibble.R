@@ -80,3 +80,22 @@ as_tsibble.demogdata <- function(x, ..., validate = TRUE) {
     dplyr::arrange(Group, Year, Age)
     return(output)
 }
+
+#' @rdname as-tsibble
+#'
+#' @examples
+#' # coerce demogdata object to tsibble ----
+#' as_tsibble(rainbow::ElNino_ERSST_region_1and2)
+#' @export
+as_tsibble.fts <- function(x, ..., validate = TRUE) {
+  output <- x$y %>%
+    tibble::as_tibble() %>%
+    dplyr::mutate(..x = x$x) %>%
+    tidyr::gather(key = "Year", value = "..yname", -..x) %>%
+    dplyr::mutate(.index = rep(x$time, rep(NROW(x$y),NCOL(x$y)))) %>%
+    dplyr::arrange(.index, ..x) %>%
+    dplyr::select(.index, ..x, ..yname, tidyselect::everything())
+  colnames(output)[colnames(output)=="..x"] <- x$xname
+  colnames(output)[colnames(output)=="..yname"] <- x$yname
+  tsibble::as_tsibble(output, index = .index, key = !!rlang::sym(x$xname), validate = validate)
+}

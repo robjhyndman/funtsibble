@@ -2,9 +2,12 @@
 % Please edit documentation in R/tsibble.R
 \name{as_tsibble.demogdata}
 \alias{as_tsibble.demogdata}
+\alias{as_tsibble.fts}
 \title{Coerce to a tsibble object}
 \usage{
 \method{as_tsibble}{demogdata}(x, ..., validate = TRUE)
+
+\method{as_tsibble}{fts}(x, ..., validate = TRUE)
 }
 \arguments{
 \item{x}{Objects to be coerced to a tsibble (`tbl_ts`).}
@@ -24,6 +27,8 @@ Coerce to a tsibble object
 \examples{
 # coerce demogdata object to tsibble ----
 as_tsibble(demography::fr.mort)
+# coerce demogdata object to tsibble ----
+as_tsibble(rainbow::ElNino_ERSST_region_1and2)
 }
 \seealso{
 \code{\link[tsibble]{as_tsibble}}
