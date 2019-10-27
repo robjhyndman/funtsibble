@@ -4,21 +4,37 @@
 \alias{as_funtsibble}
 \alias{as_funtsibble.demogdata}
 \alias{as_funtsibble.fts}
+\alias{as_funtsibble.tbl_ts}
 \title{Coerce to a funtsibble object}
 \usage{
-as_funtsibble(x, key = NULL, index, regular = TRUE, validate = TRUE,
-  .drop = TRUE, ...)
+as_funtsibble(x, key = NULL, funkey, index, regular = TRUE,
+  validate = TRUE, .drop = TRUE, ...)
 
 \method{as_funtsibble}{demogdata}(x, ..., validate = TRUE)
 
 \method{as_funtsibble}{fts}(x, ..., validate = TRUE)
+
+\method{as_funtsibble}{tbl_ts}(x, funkey, ..., validate = TRUE)
 }
 \arguments{
 \item{x}{Objects to be coerced to a funtsibble (`fun_tbl_ts`).}
 
+\item{key}{Unquoted variable(s) that uniquely determine time indices. 
+`c()` for multiple variables. It works with tidy selector
+(e.g. [dplyr::starts_with()]).}
+
+\item{funkey}{A subset of keys that define the functions.}
+
+\item{index}{A bare (or unquoted) variable to specify the time index variable.}
+
+\item{regular}{Regular time interval (`TRUE`) or irregular (`FALSE`). The
+interval is determined by the greatest common divisor of index column, if `TRUE`.}
+
 \item{validate}{`TRUE` suggests to verify that each key or each combination
 of key variables leads to unique time indices (i.e. a valid tsibble). If you
 are sure that it's a valid input, specify `FALSE` to skip the checks.}
+
+\item{.drop}{If `TRUE`, empty key groups are dropped.}
 
 \item{...}{Other arguments passed on to individual methods.}
 }
@@ -28,10 +44,13 @@ A funtsibble object.
 \description{
 Coerce to a funtsibble object
 }
+\details{
+A funtsibble is sorted by any non-functional keys first, then functional keys and index.
+}
 \examples{
-# coerce demogdata object to tsibble ----
+# coerce demogdata object to funtsibble ----
 as_funtsibble(demography::fr.mort)
-# coerce demogdata object to tsibble ----
+# coerce fts object to funtsibble ----
 as_funtsibble(rainbow::ElNino_ERSST_region_1and2)
 }
 \seealso{

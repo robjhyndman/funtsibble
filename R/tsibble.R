@@ -1,17 +1,27 @@
 #' Coerce to a funtsibble object
 #'
 #' @param x Objects to be coerced to a funtsibble (`fun_tbl_ts`).
+#' @param key Unquoted variable(s) that uniquely determine time indices. 
+#' `c()` for multiple variables. It works with tidy selector
+#' (e.g. [dplyr::starts_with()]).
+#' @param funkey A subset of keys that define the functions.
+#' @param index A bare (or unquoted) variable to specify the time index variable.
+#' @param regular Regular time interval (`TRUE`) or irregular (`FALSE`). The
+#' interval is determined by the greatest common divisor of index column, if `TRUE`.
 #' @param validate `TRUE` suggests to verify that each key or each combination
 #' of key variables leads to unique time indices (i.e. a valid tsibble). If you
 #' are sure that it's a valid input, specify `FALSE` to skip the checks.
+#' @param .drop If `TRUE`, empty key groups are dropped.
 #' @param ... Other arguments passed on to individual methods.
+#'
+#' @details A funtsibble is sorted by any non-functional keys first, then functional keys and index.
 #'
 #' @return A funtsibble object.
 #' @rdname as_funtsibble
 #' @seealso \code{\link[tsibble]{as_tsibble}}
 #'
 #' @export
-as_funtsibble <- function(x, key = NULL, index, regular = TRUE,
+as_funtsibble <- function(x, key = NULL, funkey, index, regular = TRUE,
                        validate = TRUE, .drop = TRUE, ...) {
   stopifnot(rlang::is_logical(regular, n = 1))
   UseMethod("as_funtsibble")
@@ -88,6 +98,7 @@ as_funtsibble.demogdata <- function(x, ..., validate = TRUE) {
     tsibble::as_tsibble(index = Year, key = c(AgeGroup, Age, Group), validate = validate) %>%
     dplyr::arrange(Group, Year, Age)
     class(output) <- c("fun_tbl_ts", class(output))
+    attributes(output)["funkey"] <- "Age"
     return(output)
 }
 
@@ -109,6 +120,7 @@ as_funtsibble.fts <- function(x, ..., validate = TRUE) {
   colnames(output)[colnames(output)=="..yname"] <- x$yname
   output <- tsibble::as_tsibble(output, index = .index, key = !!rlang::sym(x$xname), validate = validate)
   class(output) <- c("fun_tbl_ts", class(output))
+  attributes(output)["funkey"] <- x$xname
   output
 }
 
@@ -116,7 +128,44 @@ as_funtsibble.fts <- function(x, ..., validate = TRUE) {
 #' @rdname as_funtsibble
 #'
 #' @export
-as_funtsibble.tsibble <- function(x, ..., validate = TRUE) {
+as_funtsibble.tbl_ts <- function(x, funkey, ..., validate = TRUE) {
   class(x) <- c("fun_tbl_ts", class(x))
+  attributes(x)["funkey"] <- as.character(substitute(funkey))
   x
+}
+
+#' @importFrom tibble tbl_sum
+#' @export
+tbl_sum.fun_tbl_ts <- function(x) {
+  int_x <- tsibble::interval(x)
+  fnt_int <- format(int_x)
+  idx <- x[[tsibble::index_var(x)]]
+  first <- c("A funtsibble" = paste(dim_tbl_ts(x), brackets(fnt_int)))
+  n_keys <- big_mark(n_keys(x))
+  key_sum <- c(Key = paste(comma(key_vars(x)), brackets(n_keys)))
+  funkeys <- attributes(x)$funkey
+  key_sum <- c(key_sum, "Functional Key" = comma(funkeys))
+  c(first, key_sum)
+}
+
+## Following functions imported from tsibble
+
+dim_tbl_ts <- function (x) {
+    dim_x <- dim(x)
+    format_dim <- purrr::map_chr(dim_x, big_mark)
+    paste(format_dim, collapse = " x ")
+}
+big_mark <- function (x, ...) {
+    mark <- if (identical(getOption("OutDec"), ",")) 
+        "."
+    else ","
+    ret <- formatC(x, big.mark = mark, format = "d", ...)
+    ret[is.na(x)] <- "??"
+    ret
+}
+brackets <- function (x) {
+    paste0("[", x, "]")
+}
+comma <- function (...) {
+    paste(..., collapse = ", ")
 }
